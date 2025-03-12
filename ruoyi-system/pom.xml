@@ -32,11 +32,6 @@
             <artifactId>swagger-annotations</artifactId>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.ruoyi</groupId>
-            <artifactId>ruoyi-common</artifactId>
-        </dependency>
-
     </dependencies>
 
 </project>

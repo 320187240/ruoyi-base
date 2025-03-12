@@ -108,3 +108,17 @@ INSERT INTO sys_dict_data (dict_code, dict_sort, dict_label, dict_value, dict_ty
 INSERT INTO sys_dict_data (dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, update_by, update_time, remark) VALUES(108, 0, '代理表达式', 'delegateExpressionListener', 'sys_listener_value_type', NULL, 'default', 'N', '0', 'admin', '2022-12-25 11:49:16', 'admin', '2024-09-05 21:38:16', NULL);
 INSERT INTO sys_dict_data (dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, update_by, update_time, remark) VALUES(109, 0, '请假', 'leave', 'sys_process_category', NULL, 'default', 'N', '0', 'admin', '2024-03-12 09:08:42', '', NULL, NULL);
 INSERT INTO sys_dict_data (dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time, update_by, update_time, remark) VALUES(110, 0, '报销', 'expense', 'sys_process_category', NULL, 'default', 'N', '0', 'admin', '2024-03-12 09:09:02', '', NULL, NULL);
+
+
+CREATE TABLE sys_task_form
+(
+    id           BIGINT(20)   NULL COMMENT '主键',
+    form_id      BIGINT(20)   NULL COMMENT '表单主键',
+    task_id      VARCHAR(255) NULL COMMENT '所属任务',
+    search_value VARCHAR(255) NULL COMMENT '搜索值',
+    create_by    VARCHAR(255) NULL COMMENT '创建者',
+    create_time  DATETIME     NULL COMMENT '创建时间',
+    update_by    VARCHAR(255) NULL COMMENT '更新者',
+    update_time  DATETIME     NULL COMMENT '更新时间',
+    remark       VARCHAR(255) NULL COMMENT '备注'
+);

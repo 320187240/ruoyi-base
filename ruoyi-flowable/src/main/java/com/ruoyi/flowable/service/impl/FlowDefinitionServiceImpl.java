@@ -3,23 +3,20 @@ package com.ruoyi.flowable.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.ruoyi.flowable.common.constant.ProcessConstants;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.flowable.common.constant.ProcessConstants;
 import com.ruoyi.flowable.common.enums.FlowComment;
-import com.ruoyi.system.domain.FlowProcDefDto;
 import com.ruoyi.flowable.factory.FlowServiceFactory;
 import com.ruoyi.flowable.service.IFlowDefinitionService;
 import com.ruoyi.flowable.service.ISysDeployFormService;
+import com.ruoyi.system.domain.FlowProcDefDto;
 import com.ruoyi.system.domain.SysForm;
 import com.ruoyi.system.mapper.FlowDeployMapper;
-import com.ruoyi.system.service.ISysDeptService;
-import com.ruoyi.system.service.ISysPostService;
-import com.ruoyi.system.service.ISysUserService;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ProcessDefinition;
@@ -27,14 +24,16 @@ import org.flowable.engine.repository.ProcessDefinitionQuery;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.image.impl.DefaultProcessDiagramGenerator;
 import org.flowable.task.api.Task;
-import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * 流程定义
@@ -49,13 +48,7 @@ public class FlowDefinitionServiceImpl extends FlowServiceFactory implements IFl
     @Resource
     private ISysDeployFormService sysDeployFormService;
 
-    @Resource
-    private ISysUserService sysUserService;
-
-    @Resource
-    private ISysDeptService sysDeptService;
-
-    @Resource
+    @Autowired
     private FlowDeployMapper flowDeployMapper;
 
     private static final String BPMN_FILE_SUFFIX = ".bpmn";
@@ -105,7 +98,7 @@ public class FlowDefinitionServiceImpl extends FlowServiceFactory implements IFl
 //        }
         PageHelper.startPage(pageNum, pageSize);
         final List<FlowProcDefDto> dataList = flowDeployMapper.selectDeployList(name);
-        // 加载挂表单
+//         加载挂表单
         for (FlowProcDefDto procDef : dataList) {
             SysForm sysForm = sysDeployFormService.selectSysDeployFormByDeployId(procDef.getDeploymentId());
             if (Objects.nonNull(sysForm)) {

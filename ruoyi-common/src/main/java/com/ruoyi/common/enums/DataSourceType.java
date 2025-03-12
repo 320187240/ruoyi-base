@@ -5,15 +5,17 @@ package com.ruoyi.common.enums;
  * 
  * @author ruoyi
  */
-public enum DataSourceType
-{
-    /**
-     * 主库
-     */
-    MASTER,
+public enum DataSourceType {
+    MASTER, SLAVE;
 
-    /**
-     * 从库
-     */
-    SLAVE
+    public static DataSourceType fromString(String value) {
+        if (value == null) {
+            return MASTER;
+        }
+        try {
+            return valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return MASTER;
+        }
+    }
 }

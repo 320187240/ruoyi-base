@@ -2,8 +2,12 @@ package com.ruoyi.system.domain;
 
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+
+import java.io.Serial;
 
 /**
  * 流程任务关联单对象 sys_task_form
@@ -11,8 +15,11 @@ import org.apache.commons.lang3.builder.ToStringStyle;
  * @author Tony
  * @date 2021-04-03
  */
+@EqualsAndHashCode(callSuper = true)
+@Data
 public class SysTaskForm extends BaseEntity
 {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /** 主键 */
@@ -26,33 +33,6 @@ public class SysTaskForm extends BaseEntity
     @Excel(name = "所属任务")
     private String taskId;
 
-    public void setId(Long id) 
-    {
-        this.id = id;
-    }
-
-    public Long getId() 
-    {
-        return id;
-    }
-    public void setFormId(Long formId) 
-    {
-        this.formId = formId;
-    }
-
-    public Long getFormId() 
-    {
-        return formId;
-    }
-    public void setTaskId(String taskId) 
-    {
-        this.taskId = taskId;
-    }
-
-    public String getTaskId() 
-    {
-        return taskId;
-    }
 
     @Override
     public String toString() {
