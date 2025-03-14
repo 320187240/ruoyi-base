@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.alicp.jetcache.anno.CacheRefresh;
+import com.alicp.jetcache.anno.CacheType;
+import com.alicp.jetcache.anno.Cached;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.annotation.DataScope;
@@ -121,6 +125,13 @@ public class SysDeptServiceImpl implements ISysDeptService
      * @return 部门信息
      */
     @Override
+    @Cached(
+            name = "dept",
+            expire = 300,
+            cacheType = CacheType.BOTH,
+            cacheNullValue = true// 缓存空值防止穿透
+    )
+    @CacheRefresh(refresh = 10)
     public SysDept selectDeptById(Long deptId)
     {
         return deptMapper.selectDeptById(deptId);

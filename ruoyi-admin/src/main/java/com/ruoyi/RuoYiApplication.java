@@ -1,5 +1,6 @@
 package com.ruoyi;
 
+import com.alicp.jetcache.anno.config.EnableMethodCache;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,6 +12,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
  */
 @SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
 @MapperScan("com.ruoyi.**.mapper")
+@EnableMethodCache(basePackages = "com.ruoyi.system.**")
 public class RuoYiApplication
 {
     public static void main(String[] args)

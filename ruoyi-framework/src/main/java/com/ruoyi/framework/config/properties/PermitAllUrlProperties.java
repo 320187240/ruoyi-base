@@ -6,10 +6,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.condition.PathPatternsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -38,6 +43,7 @@ import java.util.regex.Pattern;
  * 将合法的匿名访问路径存储在 List<String> urls 中，供 Spring Security 配置使用。
  */
 @Configuration
+@Component("permitAllUrlProperties")
 public class PermitAllUrlProperties implements InitializingBean, ApplicationContextAware {
 
 
@@ -50,7 +56,9 @@ public class PermitAllUrlProperties implements InitializingBean, ApplicationCont
     @Override
     public void afterPropertiesSet() {
         logger.debug("开始扫描允许匿名访问的URL...");
-        RequestMappingHandlerMapping mapping = applicationContext.getBean(RequestMappingHandlerMapping.class);
+        RequestMappingHandlerMapping mapping = applicationContext.getBean(
+                "requestMappingHandlerMapping", RequestMappingHandlerMapping.class
+        );
         Map<RequestMappingInfo, HandlerMethod> map = mapping.getHandlerMethods();
 
         map.forEach((info, handlerMethod) -> {
