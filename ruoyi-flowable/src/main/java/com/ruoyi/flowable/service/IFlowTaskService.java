@@ -3,10 +3,7 @@ package com.ruoyi.flowable.service;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.flowable.domain.vo.FlowQueryVo;
 import com.ruoyi.flowable.domain.vo.FlowTaskVo;
-import org.flowable.task.api.Task;
-
 import java.io.InputStream;
-import java.util.List;
 
 /**
  * @author Tony

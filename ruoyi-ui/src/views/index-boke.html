@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>早岁已知世事艰，仍许飞鸿荡云间</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #5a6e8c, #6a5a7d);
+            --secondary-gradient: linear-gradient(135deg, #3a4a5c, #425263);
+            --text-light: #e0e0e0;
+            --spacing-lg: 40px;
+            --spacing-md: 30px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #2a2e33;
+            color: #fff;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #3a4a5c;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+        }
+
+        .content-container {
+            padding: 3rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            min-height: 80vh;
+        }
+
+        .particle-overlay {
+            position: fixed;
+            top: 0;
+            left: -50vw;
+            right: -50vw;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg) 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #333a41, #2a2e33);
+            padding: var(--spacing-md);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .card h2 {
+            font-size: 1.75rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #6c7a8e, #7a6c82);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .card p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #c8c8c8;
+        }
+
+        @media (max-width: 1200px) {
+            main {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-container {
+                padding: 2rem 1rem;
+            }
+        }
+        nav {
+	    position: sticky;
+	    top: 0;
+	    z-index: 2;
+	    background: linear-gradient(135deg, #3a4a5c, #2a2e33);
+	    padding: 1.5rem 2rem;
+	    display: flex;
+	    justify-content: center;
+	    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+	}
+	
+	.nav-container {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    width: 100%;
+	    max-width: 1400px;
+	}
+	
+	.logo {
+	    font-size: 1.5rem;
+	    font-weight: 700;
+	    color: #e0e0e0;
+	    text-decoration: none;
+	    background: linear-gradient(45deg, #6c7a8e, #7a6c82);
+	    -webkit-background-clip: text;
+	    color: transparent;
+	}
+	
+	.nav-links a {
+	    color: #e0e0e0;
+	    text-decoration: none;
+	    padding: 0.8rem 1.5rem;
+	    margin: 0 0.5rem;
+	    border-radius: 8px;
+	    transition: all 0.3s ease;
+	}
+	
+	.nav-links a:hover {
+	    background: rgba(255, 255, 255, 0.1);
+	    transform: translateY(-2px);
+	}
+	
+	@media (max-width: 768px) {
+	    .nav-links {
+	        display: none;
+	        position: absolute;
+	        top: 60px;
+	        left: 0;
+	        right: 0;
+	        background: #2a2e33;
+	        flex-direction: column;
+	        padding: 1rem;
+	        border-radius: 0 0 15px 15px;
+	    }
+	    
+	    .nav-links.active {
+	        display: flex;
+	    }
+	    
+	    .nav-container {
+	        flex-direction: column;
+	        align-items: flex-start;
+	    }
+	}
+    </style>
+</head>
+<body>
+	<nav>
+	    <div class="nav-container">
+	        <a href="/" class="logo">补全</a>
+	        <div class="nav-links">
+	            <a href="#home">首页</a>
+	            <a href="#articles">技术文章</a>
+	            <a href="#projects">项目展示</a>
+	            <a href="#about">关于</a>
+	        </div>
+	    </div>
+	</nav>
+
+    <div class="particle-overlay" id="particles"></div>
+
+    <div class="content-container">
+        <main>
+            <article class="card">
+                <h2>最新动态</h2>
+                <time datetime="2024-09-08">2024年9月8日</time>
+                <p>心之所向，吾将上下而求索。</p>
+            </article>
+
+            <section class="card">
+                <h2>技术文章</h2>
+                <ul class="article-list">
+                    <li>前端开发最佳实践</li>
+                    <li>响应式设计原理</li>
+                    <li>现代CSS技巧</li>
+                </ul>
+            </section>
+
+            <section class="card">
+                <h2>项目展示</h2>
+                <div class="project-gallery">
+                    <div class="project-item">项目一</div>
+                    <div class="project-item">项目二</div>
+                    <div class="project-item">项目三</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer><!-- 页脚内容 --></footer>
+
+    <script>
+        const config = {
+            particles: 200,
+            size: { min: 1.5, max: 3 },
+            speed: { x: 0.06, y: 0.07 },
+            colors: ['#6c7a8e', '#7a6c82', '#5a6e8c', '#4a5d74'],
+            connection: {
+                distance: 100,
+                opacity: 0.25,
+                lineWidth: 1.5
+            },
+            physics: {
+                friction: 0.92,
+                bounce: 0.7
+            }
+        };
+
+        class Particle {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.reset();
+            }
+
+            reset() {
+                const rect = this.canvas.getBoundingClientRect();
+                this.x = rect.left + Math.random() * rect.width * 1.5 - rect.width * 0.25;
+                this.y = rect.top + Math.random() * rect.height;
+
+                this.size = config.size.min + 
+                    Math.random() * (config.size.max - config.size.min);
+
+                this.vx = (Math.random() - 0.5) * config.speed.x * 2.5;
+                this.vy = (Math.random() - 0.5) * config.speed.y * 2.5;
+
+                this.color = config.colors[Math.floor(Math.random() * config.colors.length)];
+            }
+
+            update(canvasRect) {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < canvasRect.left - this.size || this.x > canvasRect.right + this.size) {
+                    this.vx *= -config.physics.friction;
+                }
+                if (this.y < canvasRect.top - this.size || this.y > canvasRect.bottom + this.size) {
+                    this.vy *= -config.physics.bounce;
+                }
+            }
+
+            draw() {
+                this.ctx.beginPath();
+                this.ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                this.ctx.fillStyle = this.color;
+                this.ctx.fill();
+            }
+        }
+
+        class ParticleSystem {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+                this.canvas = document.createElement('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.init();
+            }
+
+            init() {
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.container.appendChild(this.canvas);
+                
+                for (let i = 0; i < config.particles; i++) {
+                    this.particles.push(new Particle(this.canvas));
+                }
+
+                this.animate();
+            }
+
+            resize() {
+                const rect = this.container.getBoundingClientRect();
+                this.canvas.width = rect.width * 1.5;
+                this.canvas.height = rect.height;
+                this.canvas.style.transform = 'translateX(-25%)';
+            }
+
+            animate() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = config.connection.lineWidth;
+                this.ctx.globalAlpha = config.connection.opacity;
+                
+                const particlesArray = this.particles;
+                particlesArray.forEach((particleA, indexA) => {
+                    particlesArray.slice(indexA + 1).forEach(particleB => {
+                        const dx = particleA.x - particleB.x;
+                        const dy = particleA.y - particleB.y;
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        
+                        if (distance < config.connection.distance) {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(particleA.x, particleA.y);
+                            this.ctx.lineTo(particleB.x, particleB.y);
+                            this.ctx.stroke();
+                        }
+                    });
+                });
+
+                this.ctx.globalAlpha = 0.9;
+                particlesArray.forEach(particle => {
+                    particle.update(this.canvas.getBoundingClientRect());
+                    particle.draw();
+                });
+
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new ParticleSystem('particles');
+        });
+    </script>
+</body>
+</html>

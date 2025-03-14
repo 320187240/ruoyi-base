@@ -30,10 +30,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * 流程定义
@@ -174,34 +171,51 @@ public class FlowDefinitionServiceImpl extends FlowServiceFactory implements IFl
      * 根据流程定义ID启动流程实例
      *
      * @param procDefId 流程模板ID
-     * @param variables 流程变量
+     * @param inputVariables 流程变量
      * @return
      */
     @Override
-    public AjaxResult startProcessInstanceById(String procDefId, Map<String, Object> variables) {
+    public AjaxResult startProcessInstanceById(String procDefId, Map<String, Object> inputVariables) {
         try {
-            ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().processDefinitionId(procDefId)
-                    .latestVersion().singleResult();
-            if (Objects.nonNull(processDefinition) && processDefinition.isSuspended()) {
-                return AjaxResult.error("流程已被挂起,请先激活流程");
+            ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                    .processDefinitionId(procDefId)
+                    .latestVersion()
+                    .singleResult();
+
+            if (processDefinition != null && processDefinition.isSuspended()) {
+                return AjaxResult.error("流程已被挂起，请先激活");
             }
-            // 设置流程发起人Id到流程中
+
+            // 合并变量（优先使用传入参数）
+            Map<String, Object> variables = new HashMap<>();
+            variables.putAll(inputVariables);
+            variables.putIfAbsent("approval", "pass"); // 设置默认值
+
+            // 设置流程发起人
             SysUser sysUser = SecurityUtils.getLoginUser().getUser();
             identityService.setAuthenticatedUserId(sysUser.getUserId().toString());
             variables.put(ProcessConstants.PROCESS_INITIATOR, sysUser.getUserId());
 
-            // 流程发起时 跳过发起人节点
+            // 启动流程
             ProcessInstance processInstance = runtimeService.startProcessInstanceById(procDefId, variables);
-            // 给第一步申请人节点设置任务执行人和意见
-            Task task = taskService.createTaskQuery().processInstanceId(processInstance.getProcessInstanceId()).singleResult();
-            if (Objects.nonNull(task)) {
-                taskService.addComment(task.getId(), processInstance.getProcessInstanceId(), FlowComment.NORMAL.getType(), sysUser.getNickName() + "发起流程申请");
-                taskService.complete(task.getId(), variables);
+
+            // 处理初始任务
+            Task task = taskService.createTaskQuery()
+                    .processInstanceId(processInstance.getProcessInstanceId())
+                    .singleResult();
+
+            if (task != null) {
+                // 确保变量包含审批结果
+                variables.putIfAbsent("approval", "pass"); // 可动态替换为实际审批结果
+                taskService.addComment(task.getId(), processInstance.getProcessInstanceId(),
+                        FlowComment.NORMAL.getType(), sysUser.getNickName() + "发起流程申请");
+                taskService.complete(task.getId(), variables); // 传递变量
             }
+
             return AjaxResult.success("流程启动成功");
         } catch (Exception e) {
-            e.printStackTrace();
-            return AjaxResult.error("流程启动错误");
+            log.error("流程启动异常", e);
+            return AjaxResult.error("系统错误：" + e.getMessage());
         }
     }
 

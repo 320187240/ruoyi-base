@@ -37,12 +37,16 @@ import org.flowable.bpmn.model.Process;
 import org.flowable.bpmn.model.*;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.FlowableObjectNotFoundException;
+import org.flowable.common.engine.api.delegate.Expression;
+import org.flowable.common.engine.api.variable.VariableContainer;
+import org.flowable.common.engine.impl.el.ExpressionManager;
 import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.history.HistoricActivityInstance;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
 import org.flowable.engine.impl.cmd.AddMultiInstanceExecutionCmd;
 import org.flowable.engine.impl.cmd.DeleteMultiInstanceExecutionCmd;
+import org.flowable.engine.impl.context.Context;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.Execution;
 import org.flowable.engine.runtime.ProcessInstance;
@@ -697,13 +701,16 @@ public class FlowTaskServiceImpl extends FlowServiceFactory implements IFlowTask
                 .taskAssignee(userId.toString())
                 .orderByHistoricTaskInstanceEndTime()
                 .desc();
-        List<HistoricTaskInstance> historicTaskInstanceList = taskInstanceQuery.listPage(queryVo.getPageSize() * (queryVo.getPageNum() - 1), queryVo.getPageSize());
+
+        List<HistoricTaskInstance> historicTaskInstanceList = taskInstanceQuery.listPage(
+                queryVo.getPageSize() * (queryVo.getPageNum() - 1),
+                queryVo.getPageSize()
+        );
+
         List<FlowTaskDto> hisTaskList = new ArrayList<>();
         for (HistoricTaskInstance histTask : historicTaskInstanceList) {
             FlowTaskDto flowTask = new FlowTaskDto();
-            // 当前流程信息
             flowTask.setTaskId(histTask.getId());
-            // 审批人员信息
             flowTask.setCreateTime(histTask.getCreateTime());
             flowTask.setFinishTime(histTask.getEndTime());
             flowTask.setDuration(getDate(histTask.getDurationInMillis()));
@@ -711,7 +718,7 @@ public class FlowTaskServiceImpl extends FlowServiceFactory implements IFlowTask
             flowTask.setTaskDefKey(histTask.getTaskDefinitionKey());
             flowTask.setTaskName(histTask.getName());
 
-            // 流程定义信息
+            // 获取流程定义信息
             ProcessDefinition pd = repositoryService.createProcessDefinitionQuery()
                     .processDefinitionId(histTask.getProcessDefinitionId())
                     .singleResult();
@@ -721,16 +728,46 @@ public class FlowTaskServiceImpl extends FlowServiceFactory implements IFlowTask
             flowTask.setProcInsId(histTask.getProcessInstanceId());
             flowTask.setHisProcInsId(histTask.getProcessInstanceId());
 
-            // 流程发起人信息
-            HistoricProcessInstance historicProcessInstance = historyService.createHistoricProcessInstanceQuery()
+            // 获取流程发起人信息
+            HistoricProcessInstance historicProcessInstance = historyService
+                    .createHistoricProcessInstanceQuery()
                     .processInstanceId(histTask.getProcessInstanceId())
                     .singleResult();
-            SysUser startUser = sysUserService.selectUserById(Long.parseLong(historicProcessInstance.getStartUserId()));
-            flowTask.setStartUserId(startUser.getNickName());
-            flowTask.setStartUserName(startUser.getNickName());
-            flowTask.setStartDeptName(Objects.nonNull(startUser.getDept()) ? startUser.getDept().getDeptName() : "");
+
+            if (historicProcessInstance != null) {
+                String startUserIdStr = historicProcessInstance.getStartUserId();
+                if (StringUtils.isNotEmpty(startUserIdStr)) {
+                    try {
+                        long startUserId = Long.parseLong(startUserIdStr);
+                        SysUser startUser = sysUserService.selectUserById(startUserId);
+                        if (startUser != null) {
+                            flowTask.setStartUserId(startUser.getUserId().toString());
+                            flowTask.setStartUserName(startUser.getNickName());
+                            flowTask.setStartDeptName(
+                                    startUser.getDept() != null
+                                            ? startUser.getDept().getDeptName()
+                                            : ""
+                            );
+                        } else {
+                            flowTask.setStartUserName("未知用户");
+                            flowTask.setStartDeptName("");
+                        }
+                    } catch (NumberFormatException e) {
+                        log.error("无效的用户ID格式: {}", startUserIdStr, e);
+                        flowTask.setStartUserName("系统用户");
+                    }
+                } else {
+                    flowTask.setStartUserName("系统自动触发");
+                    flowTask.setStartDeptName("");
+                }
+            } else {
+                flowTask.setStartUserName("未知流程");
+                flowTask.setStartDeptName("");
+            }
+
             hisTaskList.add(flowTask);
         }
+
         page.setTotal(taskInstanceQuery.count());
         page.setRecords(hisTaskList);
         return AjaxResult.success(page);
@@ -962,18 +999,119 @@ public class FlowTaskServiceImpl extends FlowServiceFactory implements IFlowTask
      */
     @Override
     public AjaxResult getNextFlowNode(FlowTaskVo flowTaskVo) {
-        // Step 1. 获取当前节点并找到下一步节点
-        Task task = taskService.createTaskQuery().taskId(flowTaskVo.getTaskId()).singleResult();
-        if (Objects.isNull(task)) {
-            return AjaxResult.error("任务不存在或已被审批!");
+        try {
+            Task task = taskService.createTaskQuery()
+                    .taskId(flowTaskVo.getTaskId())
+                    .active()
+                    .singleResult();
+
+            if (task == null) {
+                return AjaxResult.error("任务不存在");
+            }
+
+            // 合并变量上下文
+            Map<String, Object> variables = new HashMap<>();
+            variables.putAll(taskService.getVariables(task.getId()));
+            variables.putAll(flowTaskVo.getVariables()); // 优先使用传入变量
+
+            // 强制校验必要变量
+            if (!variables.containsKey("approval")) {
+                return AjaxResult.error("审批结果未指定");
+            }
+
+            List<UserTask> nextUserTask = FindNextNodeUtil.getNextUserTasks(
+                    repositoryService,
+                    task,
+                    variables // 传递合并后的变量
+            );
+
+            return CollectionUtils.isEmpty(nextUserTask)
+                    ? AjaxResult.success("流程结束")
+                    : getFlowAttribute(nextUserTask);
+
+        } catch (Exception e) {
+            log.error("流程处理异常: {}", e.getMessage(), e);
+            return AjaxResult.error("系统错误：" + e.getMessage());
         }
-        // Step 2. 获取当前流程所有流程变量(网关节点时需要校验表达式)
-        Map<String, Object> variables = taskService.getVariables(task.getId());
-        List<UserTask> nextUserTask = FindNextNodeUtil.getNextUserTasks(repositoryService, task, variables);
-        if (CollectionUtils.isEmpty(nextUserTask)) {
-            return AjaxResult.success("流程已完结!", null);
+    }
+
+    private List<UserTask> findNextUserTasksByModel(Task task, Map<String, Object> variables) {
+        BpmnModel bpmnModel = repositoryService.getBpmnModel(task.getProcessDefinitionId());
+        FlowElement currentElement = bpmnModel.getFlowElement(task.getTaskDefinitionKey());
+
+        // 创建变量容器（完整实现）
+        VariableContainer variableContainer = new VariableContainer() {
+            private final Map<String, Object> delegate = variables;
+
+            @Override
+            public Object getVariable(String variableName) {
+                return delegate.get(variableName);
+            }
+
+            @Override
+            public void setVariable(String variableName, Object value) {
+                throw new UnsupportedOperationException("当前为只读上下文");
+            }
+
+            @Override
+            public void setTransientVariable(String variableName, Object variableValue) {
+                throw new UnsupportedOperationException("当前不支持临时变量");
+            }
+
+            @Override
+            public String getTenantId() {
+                return "";
+            }
+
+            @Override
+            public boolean hasVariable(String variableName) {
+                return delegate.containsKey(variableName);
+            }
+        };
+
+        List<UserTask> result = new ArrayList<>();
+        ExpressionManager expressionManager = Context.getProcessEngineConfiguration().getExpressionManager();
+
+        for (SequenceFlow flow : currentElement.getSubProcess().getOutgoingFlows()) {
+            boolean conditionMet = true;
+            if (StringUtils.isNotEmpty(flow.getConditionExpression())) {
+                Expression expression = expressionManager.createExpression(flow.getConditionExpression());
+                // 使用变量容器解析表达式
+                conditionMet = (Boolean) expression.getValue(variableContainer);
+            }
+
+            if (conditionMet) {
+                FlowElement target = flow.getTargetFlowElement();
+                if (target instanceof UserTask) {
+                    result.add((UserTask) target);
+                } else if (target instanceof Gateway) {
+                    result.addAll(processGateway((Gateway) target, variableContainer));
+                }
+            }
         }
-        return getFlowAttribute(nextUserTask);
+        return result;
+    }
+
+    private List<UserTask> processGateway(Gateway gateway, VariableContainer variableContainer) {
+        List<UserTask> result = new ArrayList<>();
+        ExpressionManager expressionManager = Context.getProcessEngineConfiguration().getExpressionManager();
+
+        for (SequenceFlow flow : gateway.getOutgoingFlows()) {
+            if (StringUtils.isNotEmpty(flow.getConditionExpression())) {
+                Expression expression = expressionManager.createExpression(flow.getConditionExpression());
+                Boolean evalResult = (Boolean) expression.getValue(variableContainer);
+
+                if (evalResult != null && evalResult) {
+                    FlowElement target = flow.getTargetFlowElement();
+                    if (target instanceof UserTask) {
+                        result.add((UserTask) target);
+                    } else if (target instanceof Gateway) {
+                        result.addAll(processGateway((Gateway) target, variableContainer));
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -984,17 +1122,73 @@ public class FlowTaskServiceImpl extends FlowServiceFactory implements IFlowTask
      */
     @Override
     public AjaxResult getNextFlowNodeByStart(FlowTaskVo flowTaskVo) {
-        // Step 1. 查找流程定义信息
-        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().deploymentId(flowTaskVo.getDeploymentId()).singleResult();
-        if (Objects.isNull(processDefinition)) {
-            return AjaxResult.error("流程信息不存在!");
+        // 参数校验
+        if (flowTaskVo.getDeploymentId() == null) {
+            return AjaxResult.error("部署ID不能为空");
         }
-        // Step 2. 获取下一任务节点(网关节点时需要校验表达式)
-        List<UserTask> nextUserTask = FindNextNodeUtil.getNextUserTasksByStart(repositoryService, processDefinition, flowTaskVo.getVariables());
-        if (CollectionUtils.isEmpty(nextUserTask)) {
-            return AjaxResult.error("暂未查找到下一任务,请检查流程设计是否正确!");
+
+        try {
+            // Step 1: 获取流程定义（使用最新版本）
+            ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                    .deploymentId(flowTaskVo.getDeploymentId())
+                    .latestVersion()
+                    .singleResult();
+
+            if (processDefinition == null) {
+                return AjaxResult.error("未找到对应流程定义");
+            }
+
+            // Step 2: 构建安全变量上下文
+            Map<String, Object> variables = Optional.ofNullable(flowTaskVo.getVariables())
+                    .orElse(new HashMap<>());
+
+            // 添加默认变量（根据业务需求调整）
+            variables.putIfAbsent("approval", "pass");
+
+            // Step 3: 启动临时流程实例
+            ProcessInstance processInstance = runtimeService.createProcessInstanceBuilder()
+                    .processDefinitionId(processDefinition.getId())
+                    .variables(variables)
+                    .start(); // 直接启动流程实例
+
+            try {
+                // 获取当前活动任务
+                List<Task> tasks = taskService.createTaskQuery()
+                        .processInstanceId(processInstance.getId())
+                        .list();
+
+                if (CollectionUtils.isEmpty(tasks)) {
+                    return AjaxResult.error("未找到可用任务节点");
+                }
+
+                // 转换为业务需要的格式
+                List<UserTask> userTasks = tasks.stream()
+                        .map(task -> {
+                            UserTask ut = new UserTask();
+                            ut.setId(task.getTaskDefinitionKey());
+                            ut.setName(task.getName());
+                            ut.setAssignee(task.getAssignee());
+                            return ut;
+                        })
+                        .collect(Collectors.toList());
+
+                return getFlowAttribute(userTasks);
+
+            } finally {
+                // 清理临时流程实例
+                runtimeService.deleteProcessInstance(
+                        processInstance.getId(),
+                        "getNextFlowNodeByStart validation finished"
+                );
+            }
+
+        } catch (FlowableObjectNotFoundException e) {
+            log.error("流程路径异常: {}", e.getMessage(), e);
+            return AjaxResult.error("流程路径不通，请检查网关条件配置");
+        } catch (Exception e) {
+            log.error("获取下一节点失败: {}", e.getMessage(), e);
+            return AjaxResult.error("系统异常：" + e.getMessage());
         }
-        return getFlowAttribute(nextUserTask);
     }
 
 

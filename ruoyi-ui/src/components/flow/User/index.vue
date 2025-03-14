@@ -175,7 +175,6 @@ export default {
     },
     userList: {
       handler(newVal) {
-        debugger
         if (StrUtil.isNotBlank(newVal) && this.selectUserList.length > 0) {
             this.$nextTick(() => {
               this.$refs.dataTable.clearSelection();

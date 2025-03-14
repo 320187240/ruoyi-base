@@ -44,6 +44,15 @@ export function addDeployment(data) {
   })
 }
 
+// 撤回流程定义
+export function revokeProcess(data) {
+  return request({
+    url: '/flowable/task/revokeProcess',
+    method: 'post',
+    data: data
+  })
+}
+
 // 修改流程定义
 export function updateDeployment(data) {
   return request({
